@@ -311,7 +311,7 @@ Nᴀᴍᴇ : {}
 
 Mᴇꜱꜱᴀɢᴇ : <b>{}</b>"""
     
-        caption = """<b>📜 Name</b>: <code>{file_name}</code>
+        CAPTION = """<b>📜 Name</b>: <code>{file_name}</code>
 
 <b>┏ 💾 Size: {file_size}
 ┃
