@@ -184,6 +184,7 @@ async def search_gagala(text):
     return [title.getText() for title in titles]
 
 async def get_shortlink(link, grp_id, is_second_shortener=False, is_third_shortener=False):
+    link = f'https://shortlink.puffkinger.shop/shortner?url={link}'
     settings = await get_settings(grp_id)
     if is_third_shortener:             
         api, site = settings['api_three'], settings['shortner_three']
