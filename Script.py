@@ -310,8 +310,7 @@ Iᴅ : <code>{}</code>
 Nᴀᴍᴇ : {}
 
 Mᴇꜱꜱᴀɢᴇ : <b>{}</b>"""
-    
-        CAPTION = """<b>📜 Name</b>: <code>{file_name}</code>
+    CAPTION = """<b>📜 Name</b>: <code>{file_name}</code>
 
 <b>┏ 💾 Size: {file_size}
 ┃
