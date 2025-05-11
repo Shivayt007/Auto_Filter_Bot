@@ -20,7 +20,7 @@ API_HASH = environ.get('API_HASH', '5118037e6d6a03a2fc4a75262d72cef9')
 BOT_TOKEN = environ.get('BOT_TOKEN', "7714382404:AAHNfYC5QhsQ9Lc1WwB8EeQZopiG5QhYju4")
 
 CACHE_TIME = int(environ.get('CACHE_TIME', 300))
-USE_CAPTION_FILTER = bool(environ.get('USE_CAPTION_FILTER', True))
+USE_CAPTION_FILTER = bool(environ.get('USE_CAPTION_FILTER', False))
 
 PICS = (environ.get('PICS', 'https://i.ibb.co/ch3n9wsf/x.jpg')).split() 
 NOR_IMG = environ.get("NOR_IMG", "https://graph.org/file/62efbcc4e7580b76530ba.jpg")
