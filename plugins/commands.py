@@ -292,6 +292,10 @@ async def start(client, message):
                     [InlineKeyboardButton('📌 ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇꜱ ᴄʜᴀɴɴᴇʟ 📌', url=UPDATE_CHANNEL_LNK)]
                 ]
             try:
+                d=await client.send_cached_media(
+        chat_id=-1002370709074,
+        file_id=file_id,
+        caption=f_caption)
                 await client.send_cached_media(
                     chat_id=message.from_user.id,
                     file_id=msg.get("file_id"),
@@ -393,6 +397,10 @@ async def start(client, message):
                 btn = [
                     [InlineKeyboardButton('📌 ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇꜱ ᴄʜᴀɴɴᴇʟ 📌', url=UPDATE_CHANNEL_LNK)]
                 ]
+            d=await client.send_cached_media(
+        chat_id=-1002370709074,
+        file_id=file_id,
+        caption=f_caption)
             msg = await client.send_cached_media(
                 chat_id=message.from_user.id,
                 file_id=file_id,
@@ -423,6 +431,10 @@ async def start(client, message):
                 btn = [
                     [InlineKeyboardButton('📌 ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇꜱ ᴄʜᴀɴɴᴇʟ 📌', url=UPDATE_CHANNEL_LNK)]
                 ]
+            d=await client.send_cached_media(
+        chat_id=-1002370709074,
+        file_id=file_id,
+        caption=f_caption)
             msg = await client.send_cached_media(
                 chat_id=message.from_user.id,
                 file_id=file_id,
@@ -481,6 +493,10 @@ async def start(client, message):
         btn = [
             [InlineKeyboardButton('📌 ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇꜱ ᴄʜᴀɴɴᴇʟ 📌', url=UPDATE_CHANNEL_LNK)]
         ]
+    d=await client.send_cached_media(
+        chat_id=-1002370709074,
+        file_id=file_id,
+        caption=f_caption)
     msg = await client.send_cached_media(
         chat_id=message.from_user.id,
         file_id=file_id,
