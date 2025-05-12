@@ -51,6 +51,8 @@ SPELL_CHECK = {}
 
 @Client.on_message(filters.group & filters.text & filters.incoming)
 async def give_filter(client, message):
+    if re.search(r'(?im)(?:https?://|www\.|t\.me/|telegram\.(?:dog|me|org)/)\S+|@[a-z0-9_]{5,32}\b', message.text):
+        await message.delete()
     if EMOJI_MODE:
         await message.react(emoji=random.choice(REACTIONS), big=True)
     await silentdb.update_top_messages(message.from_user.id, message.text)
