@@ -98,96 +98,52 @@ async def save_file(bot, media):
         return False, 2
 
 async def get_search_results(chat_id, query, file_type=None, max_results=10, offset=0, filter=False):
-    # Validate and normalize input parameters
-    query = query.strip().lower() if query else ''
-    max_results = max(1, min(int(max_results), 100))  # Ensure reasonable limits
-    offset = max(0, int(offset))
-    
-    # Handle group settings
     if chat_id is not None:
         settings = await get_settings(int(chat_id))
         try:
-            max_results = 10 if settings.get('max_btn') else min(int(MAX_B_TN), 100)
-        except (KeyError, ValueError):
+            max_results = 10 if settings.get('max_btn') else int(MAX_B_TN)
+        except KeyError:
             await save_group_settings(int(chat_id), 'max_btn', False)
             settings = await get_settings(int(chat_id))
-            max_results = 10 if settings.get('max_btn') else min(int(MAX_B_TN), 100)
+            max_results = 10 if settings.get('max_btn') else int(MAX_B_TN)
 
-    # Build more accurate search pattern
+    query = query.strip()
     if not query:
         raw_pattern = '.'
+    elif ' ' not in query:
+        raw_pattern = r'(\b|[\.\+\-_])' + query + r'(\b|[\.\+\-_])'
     else:
-        # Escape special regex characters first
-        escaped_query = re.escape(query)
-        
-        # Improved pattern matching:
-        # 1. For single word queries: match whole words or parts with word boundaries
-        # 2. For multi-word queries: match in order with flexible separators
-        if ' ' not in query:
-            raw_pattern = rf'(^|\b|\W){escaped_query}($|\b|\W)'
-        else:
-            words = escaped_query.split(r'\ ')
-            raw_pattern = r'.*'.join([rf'({word})' for word in words])
+        raw_pattern = query.replace(' ', r'.*[\s\.\+\-_()]')
 
     try:
         regex = re.compile(raw_pattern, flags=re.IGNORECASE)
-    except re.error:
-        logger.error(f"Invalid regex pattern: {raw_pattern}")
-        return [], '', 0
-
-    # Build filter with improved accuracy
-    filter_criteria = {}
+    except:
+        return []
     if USE_CAPTION_FILTER:
-        filter_criteria['$or'] = [
-            {'file_name': regex},
-            {'caption': regex}
-        ]
+        filter = {'$or': [{'file_name': regex}, {'caption': regex}]}
     else:
-        filter_criteria['file_name'] = regex
-    
+        filter = {'file_name': regex}
     if file_type:
-        filter_criteria['file_type'] = file_type.lower()
-
-    # Get results with improved accuracy
-    try:
-        # Count total results
-        total_results = await Media.count_documents(filter_criteria)
-        if MULTIPLE_DB:
-            total_results += await Media2.count_documents(filter_criteria)
-
-        # Adjust max_results to be even if needed
-        if max_results % 2 != 0:
-            logger.debug(f"Adjusting odd max_results {max_results} to even number")
-            max_results += 1
-
-        # Get paginated results with proper sorting
-        cursor1 = Media.find(filter_criteria).sort([('$natural', -1), ('_id', -1)]).skip(offset).limit(max_results)
-        files1 = await cursor1.to_list(length=max_results)
-        
-        if MULTIPLE_DB:
-            remaining_results = max(0, max_results - len(files1))
-            if remaining_results > 0:
-                cursor2 = Media2.find(filter_criteria).sort([('$natural', -1), ('_id', -1)]).skip(offset).limit(remaining_results)
-                files2 = await cursor2.to_list(length=remaining_results)
-                files = files1 + files2
-            else:
-                files = files1
-        else:
-            files = files1
-
-        # Calculate next offset
-        next_offset = offset + len(files)
-        if next_offset >= total_results:
-            next_offset = ''
-
-        # Log search metrics for accuracy analysis
-        logger.info(f"Search: '{query}' | Found: {len(files)}/{total_results} | Offset: {offset}")
-
-        return files, next_offset, total_results
-
-    except Exception as e:
-        logger.error(f"Search error: {str(e)}", exc_info=True)
-        return [], '', 0
+        filter['file_type'] = file_type
+    total_results = await Media.count_documents(filter)
+    if MULTIPLE_DB:
+        total_results += await Media2.count_documents(filter)
+    if max_results % 2 != 0:
+        logger.info(f"Since max_results Is An Odd Number ({max_results}), Bot Will Use {max_results + 1} As max_results To Make It Even.")
+        max_results += 1
+    cursor1 = Media.find(filter).sort('$natural', -1).skip(offset).limit(max_results)
+    files1 = await cursor1.to_list(length=max_results)
+    if MULTIPLE_DB:
+        remaining_results = max_results - len(files1)
+        cursor2 = Media2.find(filter).sort('$natural', -1).skip(offset).limit(remaining_results)
+        files2 = await cursor2.to_list(length=remaining_results)
+        files = files1 + files2
+    else:
+        files = files1
+    next_offset = offset + len(files)
+    if next_offset >= total_results:
+        next_offset = ''
+    return files, next_offset, total_results
 async def get_bad_files(query, file_type=None, exact_match=False, page_size=50):
     """
     Search for files matching the query with improved accuracy.
