@@ -144,8 +144,81 @@ async def get_search_results(chat_id, query, file_type=None, max_results=10, off
     if next_offset >= total_results:
         next_offset = ''
     return files, next_offset, total_results
+async def get_bad_files(query, file_type=None, exact_match=False, page_size=50):
+    """
+    Search for files matching the query with improved accuracy.
     
-async def get_bad_files(query, file_type=None):
+    Args:
+        query: Search string
+        file_type: Optional file type filter ('audio', 'video', etc.)
+        exact_match: If True, requires exact match of the whole string
+        page_size: Number of results to return per page
+        
+    Returns:
+        tuple: (matching_files, total_results)
+    """
+    query = query.strip()
+    
+    # Validate file_type if provided
+    if file_type and file_type not in ['audio', 'video', 'document', 'photo']:
+        return [], 0
+    
+    # Build regex pattern with improved accuracy
+    if not query:
+        raw_pattern = '.'
+    elif exact_match:
+        raw_pattern = f'^{re.escape(query)}$'
+    elif ' ' not in query:
+        raw_pattern = r'(^|\b|[\.\+\-_])' + re.escape(query) + r'($|\b|[\.\+\-_])'
+    else:
+        words = [re.escape(word) for word in query.split()]
+        raw_pattern = r'[\s\.\+\-_()]*'.join(words)
+    
+    # Compile regex safely
+    try:
+        regex = re.compile(raw_pattern, flags=re.IGNORECASE)
+    except re.error:
+        return [], 0
+    
+    # Build database filter
+    filter = {'file_type': file_type} if file_type else {}
+    if USE_CAPTION_FILTER:
+        filter['$or'] = [{'file_name': regex}, {'caption': regex}]
+    else:
+        filter['file_name'] = regex
+    
+    # Query primary database
+    cursor1 = Media.find(filter).sort('$natural', -1)
+    files1 = await cursor1.to_list(length=page_size)
+    total1 = await Media.count_documents(filter)
+    
+    # Query secondary database if enabled
+    if MULTIPLE_DB:
+        cursor2 = Media2.find(filter).sort('$natural', -1)
+        files2 = await cursor2.to_list(length=page_size)
+        total2 = await Media2.count_documents(filter)
+        files = files1 + files2
+        total = total1 + total2
+    else:
+        files = files1
+        total = total1
+    
+    # Score and sort results by match quality
+    def score_file(file):
+        score = 0
+        name = file.get('file_name', '')
+        if regex.fullmatch(name):
+            score += 2
+        elif regex.search(name):
+            score += 1
+        if USE_CAPTION_FILTER and regex.search(file.get('caption', '')):
+            score += 1
+        return score
+    
+    files.sort(key=score_file, reverse=True)
+    
+    return files, total    
+'''async def get_bad_files(query, file_type=None):
     query = query.strip()
     if not query:
         raw_pattern = '.'
@@ -172,7 +245,7 @@ async def get_bad_files(query, file_type=None):
     else:
         files = files1
     total_results = len(files)
-    return files, total_results
+    return files, total_results'''
     
 
 async def get_file_details(query):
